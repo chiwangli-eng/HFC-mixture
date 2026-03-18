@@ -134,7 +134,7 @@
                 <!-- Recycled Stream Mixing Results -->
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
                     <h3 class="text-md font-semibold mb-4 text-slate-800"><i class="fa-solid fa-recycle text-emerald-500 mr-2"></i> Recycled Stream Mixing</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm relative">
                         <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
                             <span class="block text-slate-500 text-xs mb-1">Raw Water F</span>
                             <span class="font-medium text-slate-800"><span id="out_raw_water_f">0.00</span> <span class="text-[10px] text-slate-400">kmol/d</span></span>
@@ -147,11 +147,16 @@
                             <span class="block text-slate-500 text-xs mb-1">Recycled F</span>
                             <span class="font-medium text-slate-800"><span id="out_recycled_f">0.00</span> <span class="text-[10px] text-slate-400">kmol/d</span></span>
                         </div>
-                        <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-                            <span class="block text-emerald-700 text-xs mb-1 font-semibold">Final Mixed Al/F Ratio</span>
+                        
+                        <!-- Ratio Block (With warning logic applied via JS) -->
+                        <div id="mixed_ratio_card" class="p-3 bg-emerald-50 rounded-lg border border-emerald-100 transition-colors duration-300 relative">
+                            <span id="mixed_ratio_label" class="block text-emerald-700 text-xs mb-1 font-semibold">Final Mixed Al/F Ratio</span>
                             <div class="flex items-baseline space-x-1">
                                 <span class="font-bold text-emerald-700 text-xl" id="out_mixed_ratio">0.0000</span>
-                                <span class="text-emerald-600 font-medium text-sm">/ 6</span>
+                                <span id="mixed_ratio_suffix" class="text-emerald-600 font-medium text-sm">/ 6</span>
+                            </div>
+                            <div id="mixed_ratio_warning" class="hidden absolute top-2 right-2 text-red-600 animate-pulse" title="Warning: Ratio is > 1/6">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
                             </div>
                         </div>
                     </div>
@@ -310,6 +315,29 @@
             document.getElementById('out_recycled_al').innerText = fmt(kmol_recycled_al);
             document.getElementById('out_recycled_f').innerText = fmt(kmol_recycled_f);
             document.getElementById('out_mixed_ratio').innerText = mixed_al_f_ratio_scaled.toFixed(4);
+
+            // Warning logic for Ratio > 1/6 (i.e. x > 1)
+            const mixedRatioCard = document.getElementById('mixed_ratio_card');
+            const mixedRatioLabel = document.getElementById('mixed_ratio_label');
+            const outMixedRatio = document.getElementById('out_mixed_ratio');
+            const mixedRatioSuffix = document.getElementById('mixed_ratio_suffix');
+            const mixedRatioWarning = document.getElementById('mixed_ratio_warning');
+
+            if (mixed_al_f_ratio_scaled > 1.0) {
+                // Apply Warning Styles (Flashing Red)
+                mixedRatioCard.className = 'p-3 rounded-lg border border-red-300 bg-red-50 animate-pulse transition-colors duration-300 relative';
+                mixedRatioLabel.className = 'block text-red-700 text-xs mb-1 font-semibold';
+                outMixedRatio.className = 'font-bold text-red-700 text-xl';
+                mixedRatioSuffix.className = 'text-red-600 font-medium text-sm';
+                mixedRatioWarning.classList.remove('hidden');
+            } else {
+                // Apply Normal Styles (Solid Emerald)
+                mixedRatioCard.className = 'p-3 bg-emerald-50 rounded-lg border border-emerald-100 transition-colors duration-300 relative';
+                mixedRatioLabel.className = 'block text-emerald-700 text-xs mb-1 font-semibold';
+                outMixedRatio.className = 'font-bold text-emerald-700 text-xl';
+                mixedRatioSuffix.className = 'text-emerald-600 font-medium text-sm';
+                mixedRatioWarning.classList.add('hidden');
+            }
 
             // --- Update Chart ---
             updateChart(pure_hf_kg_day, HF_CONC_PCT, hf_flow_cmd_base, CRYST_RESIDUAL_F, final_f_conc_mg_l, AL_F_RATIO);
