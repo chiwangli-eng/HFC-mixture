@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HF Dissolution Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Include Chart.js for the dynamic plot -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0ea5e9',
+                        secondary: '#0f172a'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styling for range sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        
+        <header class="mb-8 text-center md:text-left flex flex-col md:flex-row items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900 mb-2"><i class="fa-solid fa-flask text-primary mr-2"></i> HF Dissolution Calculator</h1>
+                <p class="text-slate-500">Adsorption, Sedimentation & Sludge Dissolution parameters.</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- LEFT COLUMN: INPUTS -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <h2 class="text-lg font-semibold mb-4 pb-2 border-b border-slate-100"><i class="fa-solid fa-sliders text-primary mr-2"></i> Parameters</h2>
+                    
+                    <div id="inputs-container" class="space-y-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: RESULTS & CHART -->
+            <div class="lg:col-span-8 space-y-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Adsorption & Sedimentation Results -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                        <h3 class="text-md font-semibold mb-3 text-slate-800"><i class="fa-solid fa-water text-blue-500 mr-2"></i> Adsorption & Sedimentation</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between py-1 border-b border-slate-50">
+                                <span class="text-slate-500">Al Dosage Required</span>
+                                <span class="font-medium"><span id="out_al_dosage">0.00</span> mg/L</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-slate-50">
+                                <span class="text-slate-500">Al(OH)₃ Precipitated</span>
+                                <span class="font-medium"><span id="out_al_oh_3">0.00</span> mg/L</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-slate-50">
+                                <span class="text-slate-500">Total Sludge Conc.</span>
+                                <span class="font-medium"><span id="out_sludge_conc">0.00</span> mg/L</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-slate-50">
+                                <span class="text-slate-500">Total Dry Sludge Mass</span>
+                                <span class="font-medium"><span id="out_dry_sludge">0.00</span> kg/day</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-slate-50 text-amber-700">
+                                <span class="font-medium">Concentrated Sludge Flow</span>
+                                <span class="font-bold"><span id="out_sludge_flow">0.00</span> CMD</span>
+                            </div>
+                            <div class="flex justify-between py-1 text-emerald-600">
+                                <span class="font-medium">Final Treated Water Flow</span>
+                                <span class="font-bold"><span id="out_treated_flow">0.00</span> CMD</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sludge Dissolution Results -->
+                    <div class="bg-slate-900 rounded-xl shadow-sm border border-slate-800 p-5 text-white">
+                        <h3 class="text-md font-semibold mb-3 text-slate-200"><i class="fa-solid fa-vial text-primary mr-2"></i> Sludge Dissolution</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between py-1 border-b border-slate-700">
+                                <span class="text-slate-400">Total Al Mass in Sludge</span>
+                                <span class="font-medium"><span id="out_total_al">0.00</span> kg/day</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-slate-700">
+                                <span class="text-slate-400">Pure HF Required (100%)</span>
+                                <span class="font-medium"><span id="out_pure_hf">0.00</span> kg/day</span>
+                            </div>
+                            <div class="mt-4 bg-slate-800 p-3 rounded-lg border border-slate-700">
+                                <span class="block text-slate-400 mb-1 text-xs uppercase tracking-wider">Required <span id="lbl_hf_pct" class="text-primary font-bold">5%</span> HF Flow</span>
+                                <div class="flex items-baseline space-x-2">
+                                    <span id="out_hf_flow" class="text-3xl font-bold text-white">0.00</span>
+                                    <span class="text-slate-400">CMD</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recycled Stream Mixing Results -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <h3 class="text-md font-semibold mb-4 text-slate-800"><i class="fa-solid fa-recycle text-emerald-500 mr-2"></i> Recycled Stream Mixing</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                            <span class="block text-slate-500 text-xs mb-1">Raw Water F</span>
+                            <span class="font-medium text-slate-800"><span id="out_raw_water_f">0.00</span> <span class="text-[10px] text-slate-400">kmol/d</span></span>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                            <span class="block text-slate-500 text-xs mb-1">Recycled Al</span>
+                            <span class="font-medium text-slate-800"><span id="out_recycled_al">0.00</span> <span class="text-[10px] text-slate-400">kmol/d</span></span>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                            <span class="block text-slate-500 text-xs mb-1">Recycled F</span>
+                            <span class="font-medium text-slate-800"><span id="out_recycled_f">0.00</span> <span class="text-[10px] text-slate-400">kmol/d</span></span>
+                        </div>
+                        <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                            <span class="block text-emerald-700 text-xs mb-1 font-semibold">Final Mixed Al/F Ratio</span>
+                            <div class="flex items-baseline space-x-1">
+                                <span class="font-bold text-emerald-700 text-xl" id="out_mixed_ratio">0.0000</span>
+                                <span class="text-emerald-600 font-medium text-sm">/ 6</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Chart -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <h3 class="text-md font-semibold mb-2 text-slate-800"><i class="fa-solid fa-chart-line text-primary mr-2"></i> HF Flowrate vs. Concentration</h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="hfChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Inputs Configuration ---
+        const inputsConfig = [
+            { id: 'HFD_FLOW', label: 'HFD Flow Rate', unit: 'CMD', min: 100, max: 10000, step: 50, value: 2000.0 },
+            { id: 'HFD_F_CONC', label: 'Initial F (HFD)', unit: 'mg/L', min: 200, max: 3000, step: 10, value: 1200.0 },
+            { id: 'CRYST_RESIDUAL_F', label: 'Residual F (Cryst.)', unit: 'mg/L', min: 30, max: 200, step: 1, value: 80.0 },
+            { id: 'final_f_conc_mg_l', label: 'Target Final F', unit: 'mg/L', min: 5, max: 20, step: 0.1, value: 10.0 },
+            { id: 'AL_F_RATIO_X', label: 'Al/F Molar Ratio (x/6)', unit: 'x', min: 1, max: 30, step: 0.1, value: 15.0 },
+            { id: 'SLUDGE_SOLID_PCT', label: 'Sludge Solid Content', unit: '%', min: 0.5, max: 50, step: 0.1, value: 3.0 },
+            { id: 'HF_CONC_PCT', label: 'Baseline HF Conc.', unit: '%', min: 1, max: 25, step: 0.5, value: 5.0 }
+        ];
+
+        // Molar masses and constants from Python
+        const mw_al = 26.98;
+        const mw_f = 19.00;
+        const mw_al_oh_3 = 78.00;
+        const mw_hf = 20.01;
+        const sludge_density_kg_m3 = 1000.0;
+        const hf_density_kg_m3 = 1000.0;
+        
+        let hfChartInstance = null;
+
+        // --- 2. Build the UI ---
+        function buildUI() {
+            const container = document.getElementById('inputs-container');
+            
+            inputsConfig.forEach(config => {
+                const row = document.createElement('div');
+                row.className = 'flex flex-col space-y-1';
+                
+                row.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-medium text-slate-700">${config.label}</label>
+                        <div class="flex items-center">
+                            <input type="number" id="${config.id}_number" 
+                                class="w-20 text-right px-1 py-1 border border-slate-300 rounded focus:ring-1 focus:ring-primary outline-none text-xs font-semibold text-slate-800"
+                                min="${config.min}" max="${config.max}" step="${config.step}" value="${config.value}">
+                            <span class="ml-1 text-[10px] text-slate-500 w-8">${config.unit}</span>
+                        </div>
+                    </div>
+                    <input type="range" id="${config.id}_range" 
+                        min="${config.min}" max="${config.max}" step="${config.step}" value="${config.value}"
+                        class="w-full">
+                `;
+                container.appendChild(row);
+
+                // Sync listeners
+                const numInput = document.getElementById(`${config.id}_number`);
+                const rangeInput = document.getElementById(`${config.id}_range`);
+
+                numInput.addEventListener('input', (e) => {
+                    rangeInput.value = e.target.value;
+                    calculate();
+                });
+
+                rangeInput.addEventListener('input', (e) => {
+                    numInput.value = e.target.value;
+                    calculate();
+                });
+            });
+        }
+
+        // --- 3. Calculation Engine ---
+        function calculate() {
+            const getVal = (id) => parseFloat(document.getElementById(`${id}_number`).value) || 0;
+            
+            const HFD_FLOW = getVal('HFD_FLOW');
+            const HFD_F_CONC = getVal('HFD_F_CONC'); // Used for mixing calculation
+            const CRYST_RESIDUAL_F = getVal('CRYST_RESIDUAL_F');
+            const final_f_conc_mg_l = getVal('final_f_conc_mg_l');
+            const AL_F_RATIO_X = getVal('AL_F_RATIO_X');
+            const SLUDGE_SOLID_PCT = getVal('SLUDGE_SOLID_PCT');
+            const HF_CONC_PCT = getVal('HF_CONC_PCT');
+
+            // Convert x to actual molar ratio (x / 6)
+            const AL_F_RATIO = AL_F_RATIO_X / 6.0;
+
+            // --- 2. Adsorption Calculation ---
+            const f_removed_mg_l = CRYST_RESIDUAL_F - final_f_conc_mg_l;
+            
+            const al_dosage_mg_l = (CRYST_RESIDUAL_F / mw_f) * AL_F_RATIO * mw_al;
+            const al_oh_3_mg_l = al_dosage_mg_l * (mw_al_oh_3 / mw_al);
+            const sludge_conc_mg_l = al_oh_3_mg_l + f_removed_mg_l;
+
+            // --- 3. Mass Balance & Sedimentation ---
+            const dry_sludge_kg_day = (sludge_conc_mg_l * HFD_FLOW) / 1000.0;
+            const sludge_fraction = SLUDGE_SOLID_PCT / 100.0;
+            const sludge_flow_cmd = dry_sludge_kg_day / (sludge_density_kg_m3 * sludge_fraction);
+            const treated_water_flow_cmd = HFD_FLOW - sludge_flow_cmd;
+
+            // --- 4. Sludge Dissolution with HF ---
+            const total_al_kg_day = (al_dosage_mg_l * HFD_FLOW) / 1000.0;
+            const moles_al_per_day = total_al_kg_day / mw_al;
+
+            const f_removed_kg_day = (f_removed_mg_l * HFD_FLOW) / 1000.0;
+            const moles_f_adsorbed_per_day = f_removed_kg_day / mw_f;
+
+            const moles_hf_per_day = Math.max(0.0, (moles_al_per_day * 3.0) - moles_f_adsorbed_per_day);
+            const pure_hf_kg_day = moles_hf_per_day * mw_hf;
+
+            const hf_fraction_base = HF_CONC_PCT / 100.0;
+            const hf_solution_kg_day_base = pure_hf_kg_day / hf_fraction_base;
+            const hf_flow_cmd_base = hf_solution_kg_day_base / hf_density_kg_m3;
+
+            // --- 5. Recycled Stream Mixing Calculation ---
+            // 1. Kilo-moles of F entering from the raw water (HFD)
+            const raw_f_kg_day = (HFD_FLOW * HFD_F_CONC) / 1000.0;
+            const kmol_raw_f_per_day = raw_f_kg_day / mw_f;
+
+            // 2. Kilo-moles of Al and F from the recycled dissolved sludge
+            const kmol_recycled_al = moles_al_per_day;
+            const kmol_recycled_f = kmol_recycled_al * 3.0;
+
+            // 3. Total kilo-moles mixed together
+            const total_mixed_kmol_al = kmol_recycled_al;
+            const total_mixed_kmol_f = kmol_raw_f_per_day + kmol_recycled_f;
+
+            // 4. Final Ratio
+            const mixed_al_f_ratio = total_mixed_kmol_al / total_mixed_kmol_f;
+            const mixed_al_f_ratio_scaled = mixed_al_f_ratio * 6.0;
+
+            // --- Update UI Text ---
+            const fmt = (num) => num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            document.getElementById('out_al_dosage').innerText = fmt(al_dosage_mg_l);
+            document.getElementById('out_al_oh_3').innerText = fmt(al_oh_3_mg_l);
+            document.getElementById('out_sludge_conc').innerText = fmt(sludge_conc_mg_l);
+            document.getElementById('out_dry_sludge').innerText = fmt(dry_sludge_kg_day);
+            document.getElementById('out_sludge_flow').innerText = fmt(sludge_flow_cmd);
+            document.getElementById('out_treated_flow').innerText = fmt(treated_water_flow_cmd);
+            
+            document.getElementById('out_total_al').innerText = fmt(total_al_kg_day);
+            document.getElementById('out_pure_hf').innerText = fmt(pure_hf_kg_day);
+            document.getElementById('out_hf_flow').innerText = fmt(hf_flow_cmd_base);
+            document.getElementById('lbl_hf_pct').innerText = HF_CONC_PCT + '%';
+
+            // Update Recycled Mixing Text
+            document.getElementById('out_raw_water_f').innerText = fmt(kmol_raw_f_per_day);
+            document.getElementById('out_recycled_al').innerText = fmt(kmol_recycled_al);
+            document.getElementById('out_recycled_f').innerText = fmt(kmol_recycled_f);
+            document.getElementById('out_mixed_ratio').innerText = mixed_al_f_ratio_scaled.toFixed(4);
+
+            // --- Update Chart ---
+            updateChart(pure_hf_kg_day, HF_CONC_PCT, hf_flow_cmd_base, CRYST_RESIDUAL_F, final_f_conc_mg_l, AL_F_RATIO);
+        }
+
+        // --- 4. Chart.js Integration ---
+        function updateChart(pure_hf_kg_day, baseline_pct, baseline_flow, cryst_f, target_f, al_ratio) {
+            const labels = [];
+            const dataLine = [];
+            const dataPoint = []; // Holds the single baseline point
+
+            // Generate range 1 to 25
+            for (let i = 1; i <= 25; i += 0.5) {
+                labels.push(i.toFixed(1));
+                let fraction = i / 100.0;
+                let flow_cmd = (pure_hf_kg_day / fraction) / hf_density_kg_m3;
+                dataLine.push(flow_cmd);
+                
+                // Match the current baseline input to plot the highlight point
+                if (Math.abs(i - baseline_pct) < 0.01) {
+                    dataPoint.push(flow_cmd);
+                } else {
+                    dataPoint.push(null);
+                }
+            }
+
+            if (hfChartInstance) {
+                hfChartInstance.data.labels = labels;
+                hfChartInstance.data.datasets[0].data = dataLine;
+                hfChartInstance.data.datasets[1].data = dataPoint;
+                hfChartInstance.update();
+            } else {
+                const ctx = document.getElementById('hfChart').getContext('2d');
+                hfChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'HF Flowrate (CMD)',
+                                data: dataLine,
+                                borderColor: '#0ea5e9',
+                                backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                                borderWidth: 2.5,
+                                fill: true,
+                                pointRadius: 0,
+                                pointHoverRadius: 4,
+                                tension: 0.2
+                            },
+                            {
+                                label: 'Current Input',
+                                data: dataPoint,
+                                borderColor: '#ef4444', // Red dot for the specific input
+                                backgroundColor: '#ef4444',
+                                borderWidth: 2,
+                                pointRadius: 6,
+                                pointHoverRadius: 8,
+                                showLine: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index',
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.parsed.y.toFixed(2)} CMD @ ${context.label}% Conc.`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'Concentrated HF Concentration (%)' },
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            },
+                            y: {
+                                title: { display: true, text: 'HF Flowrate (CMD)' },
+                                grid: { color: 'rgba(0,0,0,0.05)', borderDash: [5, 5] },
+                                beginAtZero: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize UI
+        window.addEventListener('DOMContentLoaded', () => {
+            buildUI();
+            calculate();
+        });
+    </script>
+</body>
+</html>
