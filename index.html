@@ -188,7 +188,7 @@
             { id: 'HFD_F_CONC', label: 'Initial F (HFD)', unit: 'mg/L', min: 200, max: 3000, step: 10, value: 1200.0 },
             { id: 'CRYST_RESIDUAL_F', label: 'Residual F (Cryst.)', unit: 'mg/L', min: 30, max: 200, step: 1, value: 80.0 },
             { id: 'final_f_conc_mg_l', label: 'Target Final F', unit: 'mg/L', min: 5, max: 20, step: 0.1, value: 10.0 },
-            { id: 'AL_F_RATIO_X', label: 'Al/F Molar Ratio (x/6)', unit: 'x', min: 1, max: 30, step: 0.1, value: 15.0 },
+            { id: 'AL_F_RATIO', label: 'Al/F Molar Ratio', unit: 'mol/mol', min: 0.5, max: 5, step: 0.1, value: 2.5 },
             { id: 'SLUDGE_SOLID_PCT', label: 'Sludge Solid Content', unit: '%', min: 0.5, max: 50, step: 0.1, value: 3.0 },
             { id: 'HF_CONC_PCT', label: 'Baseline HF Conc.', unit: '%', min: 1, max: 25, step: 0.5, value: 5.0 }
         ];
@@ -251,12 +251,9 @@
             const HFD_F_CONC = getVal('HFD_F_CONC'); // Used for mixing calculation
             const CRYST_RESIDUAL_F = getVal('CRYST_RESIDUAL_F');
             const final_f_conc_mg_l = getVal('final_f_conc_mg_l');
-            const AL_F_RATIO_X = getVal('AL_F_RATIO_X');
+            const AL_F_RATIO = getVal('AL_F_RATIO');
             const SLUDGE_SOLID_PCT = getVal('SLUDGE_SOLID_PCT');
             const HF_CONC_PCT = getVal('HF_CONC_PCT');
-
-            // Convert x to actual molar ratio (x / 6)
-            const AL_F_RATIO = AL_F_RATIO_X / 6.0;
 
             // --- 2. Adsorption Calculation ---
             const f_removed_mg_l = CRYST_RESIDUAL_F - final_f_conc_mg_l;
