@@ -105,6 +105,18 @@
                                 <span class="font-medium">Final Treated Water Flow</span>
                                 <span class="font-bold"><span id="out_treated_flow">0.00</span> CMD</span>
                             </div>
+                            
+                            <!-- Filter Press Disposal (Alternative) -->
+                            <div class="mt-3 bg-orange-50 p-3 rounded-lg border border-orange-100">
+                                <span class="block text-orange-700 text-xs mb-1 font-semibold"><i class="fa-solid fa-filter mr-1"></i> Filter Press Disposal (Alternative)</span>
+                                <div class="flex justify-between items-baseline">
+                                    <span class="text-orange-600 text-xs">Dewatered Wet Sludge</span>
+                                    <div>
+                                        <span id="out_dewatered_wet_sludge" class="text-xl font-bold text-orange-700">0.00</span>
+                                        <span class="text-orange-600 font-medium text-xs">kg/day</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -190,7 +202,8 @@
             { id: 'final_f_conc_mg_l', label: 'Target Final F', unit: 'mg/L', min: 5, max: 20, step: 0.1, value: 10.0 },
             { id: 'AL_F_RATIO', label: 'Al/F Molar Ratio', unit: 'mol/mol', min: 0.5, max: 5, step: 0.1, value: 2.5 },
             { id: 'SLUDGE_SOLID_PCT', label: 'Sludge Solid Content', unit: '%', min: 0.5, max: 50, step: 0.1, value: 3.0 },
-            { id: 'HF_CONC_PCT', label: 'Baseline HF Conc.', unit: '%', min: 1, max: 25, step: 0.5, value: 5.0 }
+            { id: 'HF_CONC_PCT', label: 'Baseline HF Conc.', unit: '%', min: 1, max: 25, step: 0.5, value: 5.0 },
+            { id: 'DEWATERED_WATER_PCT', label: 'Filter Press Water Content', unit: '%', min: 30, max: 90, step: 1, value: 70.0 }
         ];
 
         // Molar masses and constants from Python
@@ -254,6 +267,7 @@
             const AL_F_RATIO = getVal('AL_F_RATIO');
             const SLUDGE_SOLID_PCT = getVal('SLUDGE_SOLID_PCT');
             const HF_CONC_PCT = getVal('HF_CONC_PCT');
+            const DEWATERED_WATER_PCT = getVal('DEWATERED_WATER_PCT');
 
             // --- 2. Adsorption Calculation ---
             const f_removed_mg_l = CRYST_RESIDUAL_F - final_f_conc_mg_l;
@@ -302,6 +316,10 @@
             const mixed_al_f_ratio = total_mixed_kmol_al / total_mixed_kmol_f;
             const mixed_al_f_ratio_scaled = mixed_al_f_ratio * 6.0;
 
+            // --- 6. Filter Press Dewatering (Alternative) ---
+            const dewatered_solid_fraction = (100.0 - DEWATERED_WATER_PCT) / 100.0;
+            const dewatered_wet_sludge_kg_day = dry_sludge_kg_day / dewatered_solid_fraction;
+
             // --- Update UI Text ---
             const fmt = (num) => num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -311,6 +329,7 @@
             document.getElementById('out_dry_sludge').innerText = fmt(dry_sludge_kg_day);
             document.getElementById('out_sludge_flow').innerText = fmt(sludge_flow_cmd);
             document.getElementById('out_treated_flow').innerText = fmt(treated_water_flow_cmd);
+            document.getElementById('out_dewatered_wet_sludge').innerText = fmt(dewatered_wet_sludge_kg_day);
             
             document.getElementById('out_total_al').innerText = fmt(total_al_kg_day);
             document.getElementById('out_pure_hf').innerText = fmt(pure_hf_kg_day);
