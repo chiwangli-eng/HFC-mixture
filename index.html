@@ -127,6 +127,13 @@
                                     <span class="text-slate-400">CMD</span>
                                 </div>
                             </div>
+                            <div class="mt-2 bg-slate-800 p-3 rounded-lg border border-slate-700 border-l-4 border-l-primary">
+                                <span class="block text-slate-400 mb-1 text-xs uppercase tracking-wider">Total Final Flow (Sludge + HF)</span>
+                                <div class="flex items-baseline space-x-2">
+                                    <span id="out_final_dissolved_flow" class="text-2xl font-bold text-white">0.00</span>
+                                    <span class="text-slate-400 text-sm">CMD</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -277,6 +284,9 @@
             const hf_fraction_base = HF_CONC_PCT / 100.0;
             const hf_solution_kg_day_base = pure_hf_kg_day / hf_fraction_base;
             const hf_flow_cmd_base = hf_solution_kg_day_base / hf_density_kg_m3;
+            
+            // Final Dissolved Flow (Sludge + HF)
+            const final_dissolved_flow_cmd = sludge_flow_cmd + hf_flow_cmd_base;
 
             // --- 5. Recycled Stream Mixing Calculation ---
             // 1. Kilo-moles of F entering from the raw water (HFD)
@@ -308,6 +318,7 @@
             document.getElementById('out_total_al').innerText = fmt(total_al_kg_day);
             document.getElementById('out_pure_hf').innerText = fmt(pure_hf_kg_day);
             document.getElementById('out_hf_flow').innerText = fmt(hf_flow_cmd_base);
+            document.getElementById('out_final_dissolved_flow').innerText = fmt(final_dissolved_flow_cmd);
             document.getElementById('lbl_hf_pct').innerText = HF_CONC_PCT + '%';
 
             // Update Recycled Mixing Text
