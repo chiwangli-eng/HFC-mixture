@@ -345,27 +345,17 @@
 
         // --- 4. Chart.js Integration ---
         function updateChart(pure_hf_kg_day, baseline_pct, baseline_flow, cryst_f, target_f, al_ratio) {
-            const labels = [];
             const dataLine = [];
-            const dataPoint = []; // Holds the single baseline point
+            const dataPoint = [{ x: baseline_pct, y: baseline_flow }]; // Single tracking point for smooth animation
 
             // Generate range 1 to 25
             for (let i = 1; i <= 25; i += 0.5) {
-                labels.push(i.toFixed(1));
                 let fraction = i / 100.0;
                 let flow_cmd = (pure_hf_kg_day / fraction) / hf_density_kg_m3;
-                dataLine.push(flow_cmd);
-                
-                // Match the current baseline input to plot the highlight point
-                if (Math.abs(i - baseline_pct) < 0.01) {
-                    dataPoint.push(flow_cmd);
-                } else {
-                    dataPoint.push(null);
-                }
+                dataLine.push({ x: i, y: flow_cmd });
             }
 
             if (hfChartInstance) {
-                hfChartInstance.data.labels = labels;
                 hfChartInstance.data.datasets[0].data = dataLine;
                 hfChartInstance.data.datasets[1].data = dataPoint;
                 hfChartInstance.update();
@@ -374,7 +364,6 @@
                 hfChartInstance = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: labels,
                         datasets: [
                             {
                                 label: 'HF Flowrate (CMD)',
@@ -404,20 +393,25 @@
                         maintainAspectRatio: false,
                         interaction: {
                             intersect: false,
-                            mode: 'index',
+                            mode: 'nearest',
+                            axis: 'x'
                         },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
+                                    title: function() { return null; }, // Hide default categorical title
                                     label: function(context) {
-                                        return `${context.parsed.y.toFixed(2)} CMD @ ${context.label}% Conc.`;
+                                        return `${context.parsed.y.toFixed(2)} CMD @ ${context.parsed.x.toFixed(1)}% Conc.`;
                                     }
                                 }
                             }
                         },
                         scales: {
                             x: {
+                                type: 'linear', // Use continuous linear scale instead of categorical
+                                min: 1,
+                                max: 25,
                                 title: { display: true, text: 'Concentrated HF Concentration (%)' },
                                 grid: { color: 'rgba(0,0,0,0.05)' }
                             },
